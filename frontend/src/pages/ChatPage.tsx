@@ -1,22 +1,19 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Home, Send, Plus } from "lucide-react";
 import { loadLocal, saveLocal,type Chat,type Message } from "../lib/mockDatas";
 import { NotificationBell } from "../components/NotificationBell";
 
 export function ChatPage({ onNavigate }: { onNavigate: (p: string) => void }) {
-  const [chats, setChats] = useState<Chat[]>([]);
+  const [chats, setChats] = useState<Chat[]>(() => loadLocal("chats"));
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [input, setInput] = useState("");
-
-  useEffect(() => {
-    setChats(loadLocal("chats"));
-  }, []);
 
   const createChat = () => {
     const newChat: Chat = {
       id: crypto.randomUUID(),
       title: "New Chat",
+      created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
 
@@ -25,38 +22,62 @@ export function ChatPage({ onNavigate }: { onNavigate: (p: string) => void }) {
     setChats(updated);
   };
 
-  const sendMessage = () => {
-    if (!input || !currentChatId) return;
+const sendMessage = async () => {
+  if (!input || !currentChatId) return;
 
-    const newMsg: Message = {
+  const newMsg: Message = {
+    id: crypto.randomUUID(),
+    chat_id: currentChatId,
+    role: "user",
+    content: input,
+    created_at: new Date().toISOString(),
+  };
+
+  const updated = [...messages, newMsg];
+  setMessages(updated);
+  saveLocal(`chat-${currentChatId}`, updated);
+
+  const userInput = input;
+  setInput("");
+
+  try {
+    // 🔥 Call your FastAPI backend
+    const res = await fetch("http://127.0.0.1:8000/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: userInput }),
+    });
+
+    const data = await res.json();
+
+    const reply: Message = {
       id: crypto.randomUUID(),
       chat_id: currentChatId,
-      role: "user",
-      content: input,
+      role: "assistant",
+      content: data.reply || "No response received.",
       created_at: new Date().toISOString(),
     };
 
-    const updated = [...messages, newMsg];
-    setMessages(updated);
-    saveLocal(`chat-${currentChatId}`, updated);
+    const updated2 = [...updated, reply];
+    setMessages(updated2);
+    saveLocal(`chat-${currentChatId}`, updated2);
 
-    setInput("");
+  } catch (error) {
+    console.error(error);
 
-    // mock AI reply
-    setTimeout(() => {
-      const reply: Message = {
-        id: crypto.randomUUID(),
-        chat_id: currentChatId,
-        role: "assistant",
-        content: "This is a mock AI reply.",
-        created_at: new Date().toISOString(),
-      };
+    const errorReply: Message = {
+      id: crypto.randomUUID(),
+      chat_id: currentChatId,
+      role: "assistant",
+      content: "⚠️ Error connecting to AI server",
+      created_at: new Date().toISOString(),
+    };
 
-      const updated2 = [...updated, reply];
-      setMessages(updated2);
-      saveLocal(`chat-${currentChatId}`, updated2);
-    }, 800);
-  };
+    const updatedError = [...updated, errorReply];
+    setMessages(updatedError);
+    saveLocal(`chat-${currentChatId}`, updatedError);
+  }
+};
 
   const openChat = (id: string) => {
     setCurrentChatId(id);
