@@ -9,19 +9,19 @@ from sentence_transformers import SentenceTransformer
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
 def initialize_rag():
-    print("📄 Loading PDF documents...")
+    print(" Loading PDF documents...")
     text = load_pdf_folder("legal_docs")
 
-    print("✂️ Splitting text into chunks...")
+    print(" Splitting text into chunks...")
     chunks = split_text(text)
 
-    print("🧠 Generating embeddings (local)...")
+    print(" Generating embeddings (local)...")
     vectors = embed_text(chunks)
 
-    print("💾 Saving vectors to ChromaDB...")
+    print(" Saving vectors to ChromaDB...")
     add_embeddings(chunks, vectors)
 
-    print("✅ RAG initialized successfully.")
+    print(" RAG initialized successfully.")
 
 def answer_query(query):
     query_vec = model.encode([query])[0]
