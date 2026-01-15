@@ -7,24 +7,20 @@ router = APIRouter()
 @router.post("/chat")
 def chat_with_lawyer(data: dict):
     session_id = data.get("session_id", "default")
-    user_message = data["message"]
+    user_message = data.get("message")
 
-    # Add message to memory
+    if not user_message:
+        return {"reply": "No message received."}
+
+    # store user message
     memory.add_message(session_id, "user", user_message)
 
-    # Get context history
-    history = memory.get_history(session_id)
-
-    # Combine history text for AI
-    context_text = "\n".join([msg["role"] + ": " + msg["content"] for msg in history])
-
-    # Pass only latest question into RAG pipeline
+    # get AI response
     bot_reply = answer_query(user_message)
 
-    # Save bot response in memory
+    # store AI response
     memory.add_message(session_id, "assistant", bot_reply)
 
     return {
-        "reply": bot_reply,
-        "history": history
+        "reply": bot_reply
     }
