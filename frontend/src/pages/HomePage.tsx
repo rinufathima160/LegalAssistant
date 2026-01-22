@@ -9,14 +9,29 @@ export function HomePage({ onNavigate }: HomePageProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
       <nav className="bg-white/10 backdrop-blur-md border-b border-white/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2 text-white">
-            <Scale className="w-8 h-8" />
-            <span className="text-xl font-bold">AI Legal Assistant</span>
-          </div>
-          <NotificationBell />
-        </div>
-      </nav>
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+    
+    <div className="flex items-center gap-2 text-white">
+      <Scale className="w-8 h-8" />
+      <span className="text-xl font-bold">AI Legal Assistant</span>
+    </div>
+
+    <div className="flex items-center gap-4">
+      <NotificationBell />
+
+      <button
+        onClick={() => {
+          localStorage.removeItem("token");
+          window.location.reload();
+        }}
+        className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold"
+      >
+        Logout
+      </button>
+    </div>
+
+  </div>
+</nav>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center mb-16">

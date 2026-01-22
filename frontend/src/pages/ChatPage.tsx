@@ -1,32 +1,98 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Home, Send, Plus } from "lucide-react";
-import { loadLocal, saveLocal, type Chat, type Message } from "../lib/mockDatas";
 import { NotificationBell } from "../components/NotificationBell";
 
+type Chat = {
+  id: string;
+  title: string;
+  created_at: string;
+};
+
+type Message = {
+  id: string;
+  chat_id: string;
+  role: "user" | "assistant";
+  content: string;
+  created_at: string;
+};
+
 export function ChatPage({ onNavigate }: { onNavigate: (p: string) => void }) {
-  const [chats, setChats] = useState<Chat[]>(() => loadLocal("chats"));
+  const [chats, setChats] = useState<Chat[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const createChat = () => {
-    const newChat: Chat = {
-      id: crypto.randomUUID(),
-      title: "New Chat",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+  const token = localStorage.getItem("token");
+
+  /* ===========================
+     LOAD USER CHATS
+  =========================== */
+  useEffect(() => {
+    if (!token) return;
+    const fetchChats = async () => {
+      try {
+        const res = await fetch("http://127.0.0.1:8000/chat/chats", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const data = await res.json();
+        setChats(data);
+      } catch (error) {
+        console.error("Error loading chats:", error);
+      }
     };
 
-    const updated = [newChat, ...chats];
-    saveLocal("chats", updated);
-    setChats(updated);
+    fetchChats();
+  }, []);
+
+  /* ===========================
+     CREATE NEW CHAT
+  =========================== */
+  const createChat = async () => {
+    try {
+      const res = await fetch("http://127.0.0.1:8000/chat/chats", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const newChat = await res.json();
+      setChats((prev) => [newChat, ...prev]);
+      setCurrentChatId(newChat.id);
+      setMessages([]);
+    } catch (error) {
+      console.error("Error creating chat:", error);
+    }
   };
 
-const sendMessage = async () => {
+  /* ===========================
+     LOAD MESSAGES
+  =========================== */
+  const openChat = async (chatId: string) => {
+    setCurrentChatId(chatId);
+
+    try {
+      const res = await fetch(
+        `http://127.0.0.1:8000/chat/chats/${chatId}/messages`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const data = await res.json();
+      setMessages(data);
+    } catch (error) {
+      console.error("Error loading messages:", error);
+    }
+  };
+
+  /* ===========================
+     SEND MESSAGE
+  =========================== */
+ const sendMessage = async () => {
   if (!input || !currentChatId) return;
 
-  // USER MESSAGE
   const userMsg: Message = {
     id: crypto.randomUUID(),
     chat_id: currentChatId,
@@ -35,74 +101,75 @@ const sendMessage = async () => {
     created_at: new Date().toISOString(),
   };
 
-  const updated = [...messages, userMsg];
-  setMessages(updated);
-  saveLocal(`chat-${currentChatId}`, updated);
+  setMessages((prev) => [...prev, userMsg]);
 
   const userInput = input;
   setInput("");
   setLoading(true);
 
   try {
-    const res = await fetch("http://127.0.0.1:8000/chat", {
+    // 🔥 CORRECT ENDPOINT
+    const res = await fetch("http://127.0.0.1:8000/chat/message", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify({
-        message: userInput,          // ✅ FIX 1
-        session_id: currentChatId    // ✅ FIX 2 (context memory)
+        message: userInput,
+        chat_id: currentChatId,
       }),
     });
 
+    if (!res.ok) throw new Error("Server error");
+
     const data = await res.json();
-    console.log("Backend response:", data);
 
     const aiMsg: Message = {
       id: crypto.randomUUID(),
       chat_id: currentChatId,
       role: "assistant",
-      content: data.reply || "No response received.", // ✅ FIX 3
+      content: data.reply,
       created_at: new Date().toISOString(),
     };
 
-    const updated2 = [...updated, aiMsg];
-    setMessages(updated2);
-    saveLocal(`chat-${currentChatId}`, updated2);
+    setMessages((prev) => [...prev, aiMsg]);
 
   } catch (error) {
     console.error(error);
 
-    const errorMsg: Message = {
-      id: crypto.randomUUID(),
-      chat_id: currentChatId,
-      role: "assistant",
-      content: "⚠️ Error connecting to AI server",
-      created_at: new Date().toISOString(),
-    };
-
-    const updatedErr = [...updated, errorMsg];
-    setMessages(updatedErr);
-    saveLocal(`chat-${currentChatId}`, updatedErr);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        chat_id: currentChatId,
+        role: "assistant",
+        content: "⚠️ AI server error",
+        created_at: new Date().toISOString(),
+      },
+    ]);
   } finally {
     setLoading(false);
   }
 };
 
-  const openChat = (id: string) => {
-    setCurrentChatId(id);
-    setMessages(loadLocal(`chat-${id}`));
-  };
 
   return (
     <div className="h-screen flex flex-col">
       <nav className="p-4 flex justify-between bg-white border-b">
-        <button onClick={() => onNavigate("home")}><Home /></button>
+        <button onClick={() => onNavigate("home")}>
+          <Home />
+        </button>
         <NotificationBell />
       </nav>
 
       <div className="flex flex-1">
         {/* SIDEBAR */}
         <div className="w-64 border-r bg-white">
-          <button onClick={createChat} className="w-full p-3 bg-blue-500 text-white">
+          <button
+            onClick={createChat}
+            className="w-full p-3 bg-blue-500 text-white"
+          >
             <Plus /> New Chat
           </button>
 
@@ -112,7 +179,7 @@ const sendMessage = async () => {
               onClick={() => openChat(c.id)}
               className="block w-full p-3 border-b text-left hover:bg-gray-100"
             >
-              {c.title}
+              {c.title || "Untitled Chat"}
             </button>
           ))}
         </div>
@@ -121,7 +188,10 @@ const sendMessage = async () => {
         <div className="flex-1 flex flex-col bg-gray-50">
           <div className="flex-1 p-4 overflow-y-auto space-y-2">
             {messages.map((m) => (
-              <div key={m.id} className={m.role === "user" ? "text-right" : "text-left"}>
+              <div
+                key={m.id}
+                className={m.role === "user" ? "text-right" : "text-left"}
+              >
                 <span
                   className={`px-3 py-2 rounded inline-block ${
                     m.role === "user"
