@@ -6,16 +6,16 @@ from app.gemini.gemini_client import generate_text
 
 
 def initialize_rag():
-    print("📄 Loading PDF documents...")
+    print(" Loading PDF documents...")
     text = load_pdf_folder("legal_docs")
 
-    print("✂️ Splitting text into chunks...")
+    print(" Splitting text into chunks...")
     chunks = split_text(text)
 
-    print("🧠 Generating embeddings...")
+    print(" Generating embeddings...")
     vectors = embed_text(chunks)   # [(chunk, vector), ...]
 
-    print("💾 Saving vectors to ChromaDB...")
+    print(" Saving vectors to ChromaDB...")
     add_embeddings(chunks, vectors)
 
     print("✅ RAG initialized successfully.")
@@ -40,16 +40,25 @@ def answer_query(query: str) -> str:
     context = "\n".join(docs[:5])
 
     prompt = f"""
-You are an AI Legal Assistant specialized in Indian law.
+You are a friendly AI Legal Assistant for Indian law.
 
-Answer the question using ONLY the following legal context.
-If the context is insufficient, say so politely.
+Your job is to explain legal topics in very simple language,
+so that a common person with no legal background can understand.
 
+Rules:
+- Use short paragraphs
+- Avoid legal jargon
+- Do NOT mention sections unless necessary
+- Do NOT say "legal context is insufficient"
+- If exact procedure is not in documents, give a general explanation
+- Explain step-by-step where possible
+- Keep answers clear and practical
 LEGAL CONTEXT:
 {context}
 
-QUESTION:
+USER QUESTION (with context):
 {query}
+Answer clearly in simple language.
 """
 
     return generate_text(prompt)
