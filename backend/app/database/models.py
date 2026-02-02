@@ -6,6 +6,7 @@ import uuid
 
 from .database import Base
 
+###################################################################
 
 class User(Base):
     __tablename__ = "users"
