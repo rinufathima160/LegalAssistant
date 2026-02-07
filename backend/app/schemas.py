@@ -6,15 +6,18 @@ class UserCreate(BaseModel):
     email: str
     password: str
 
+###################################################################
 
 class UserLogin(BaseModel):
     email: str
     password: str
 
+###################################################################
 
 class ChatCreate(BaseModel):
     title: str
 
+###################################################################
 
 class ChatRequest(BaseModel):
     chat_id: UUID
