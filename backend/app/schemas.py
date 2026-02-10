@@ -1,5 +1,14 @@
 from pydantic import BaseModel
 from uuid import UUID
+from datetime import datetime
+
+# =========================
+# 🔔 CREATE REMINDER
+# =========================
+class ReminderCreate(BaseModel):
+    title: str
+    description: str | None = None
+    remind_at: datetime
 
 
 class UserCreate(BaseModel):

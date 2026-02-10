@@ -4,6 +4,7 @@ from app.routes.auth import router as auth_router
 from app.routes.chat import router as chat_router
 from app.database.database import engine, Base
 from app.rag.rag_pipeline import initialize_rag
+from app.routes.reminder import router as reminder_router
 
 app = FastAPI(title="Personal AI Legal Advisor")
 
@@ -38,3 +39,4 @@ app.add_middleware(
 # ======================================
 app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
 app.include_router(chat_router, prefix="/chat", tags=["Chat"])
+app.include_router(reminder_router, prefix="/reminders", tags=["Reminders"])

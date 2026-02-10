@@ -8,6 +8,27 @@ from .database import Base
 
 ###################################################################
 
+from sqlalchemy import Column, String, DateTime, ForeignKey, Text
+from sqlalchemy.orm import relationship
+import uuid
+from datetime import datetime
+from app.database.database import Base
+
+# =========================
+# 🔔 REMINDER TABLE
+# =========================
+class Reminder(Base):
+    __tablename__ = "reminders"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    remind_at = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user_id = Column(String, ForeignKey("users.id"))
+
+
 class User(Base):
     __tablename__ = "users"
 
