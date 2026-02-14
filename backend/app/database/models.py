@@ -8,11 +8,14 @@ from .database import Base
 
 ###################################################################
 
-from sqlalchemy import Column, String, DateTime, ForeignKey, Text
 from sqlalchemy.orm import relationship
 import uuid
 from datetime import datetime
 from app.database.database import Base
+
+
+from sqlalchemy import Column, String, DateTime, ForeignKey, Text, Boolean
+from sqlalchemy.dialects.postgresql import UUID
 
 # =========================
 # 🔔 REMINDER TABLE
@@ -20,13 +23,18 @@ from app.database.database import Base
 class Reminder(Base):
     __tablename__ = "reminders"
 
-    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
     title = Column(String, nullable=False)
     description = Column(Text, nullable=True)
     remind_at = Column(DateTime, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    user_id = Column(String, ForeignKey("users.id"))
+    # ⭐ NEW COLUMNS (important)
+    is_triggered = Column(Boolean, default=False)
+    is_read = Column(Boolean, default=False)
+
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
 
 
 class User(Base):
