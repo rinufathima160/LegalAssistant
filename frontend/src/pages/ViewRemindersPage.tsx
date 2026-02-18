@@ -1,19 +1,35 @@
 import { useEffect, useState } from "react";
 import { Home, Trash2 } from "lucide-react";
 import { NotificationBell } from "../components/NotificationBell";
-import { loadLocal, saveLocal, type Reminder } from "../lib/mockDatas";
+import { apiFetch } from "../lib/api";
+
+type Reminder = {
+  id: number;
+  title: string;
+  description?: string;
+  remind_at: string;
+};
 
 export function ViewRemindersPage({ onNavigate }: { onNavigate: (p: string) => void }) {
   const [reminders, setReminders] = useState<Reminder[]>([]);
 
-  useEffect(() => {
-    setReminders(loadLocal("reminders"));
-  }, []);
+  // LOAD FROM DATABASE
+  const loadReminders = async () => {
+    const data = await apiFetch("/reminders/");
+    setReminders(data);
+  };
 
-  const remove = (id: string) => {
-    const updated = reminders.filter((r) => r.id !== id);
-    saveLocal("reminders", updated);
-    setReminders(updated);
+  useEffect(() => {
+  const fetchData = async () => {
+    await loadReminders();
+  };
+
+  fetchData();
+}, []);
+  // DELETE FROM DATABASE
+  const remove = async (id: number) => {
+    await apiFetch(`/reminders/${id}`, { method: "DELETE" });
+    setReminders(reminders.filter((r) => r.id !== id));
   };
 
   return (
@@ -31,18 +47,27 @@ export function ViewRemindersPage({ onNavigate }: { onNavigate: (p: string) => v
         {reminders.length === 0 ? (
           <p className="text-gray-600">No reminders created yet.</p>
         ) : (
-          reminders.map((r) => (
-            <div key={r.id} className="p-4 bg-white shadow mb-4 rounded flex justify-between">
-              <div>
-                <p className="font-semibold">{r.title}</p>
-                <p className="text-sm text-gray-600">{r.date} @ {r.time}</p>
-                {r.description && <p>{r.description}</p>}
+          reminders.map((r) => {
+            const date = new Date(r.remind_at);
+
+            return (
+              <div key={r.id} className="p-4 bg-white shadow mb-4 rounded flex justify-between">
+                <div>
+                  <p className="font-semibold">{r.title}</p>
+
+                  <p className="text-sm text-gray-600">
+                    {date.toLocaleDateString()} @ {date.toLocaleTimeString()}
+                  </p>
+
+                  {r.description && <p>{r.description}</p>}
+                </div>
+
+                <button onClick={() => remove(r.id)} className="text-red-600">
+                  <Trash2 />
+                </button>
               </div>
-              <button onClick={() => remove(r.id)} className="text-red-600">
-                <Trash2 />
-              </button>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>

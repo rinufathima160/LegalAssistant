@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Home } from "lucide-react";
 import { NotificationBell } from "../components/NotificationBell";
-import { loadLocal, saveLocal, type Reminder } from "../lib/mockDatas";
-
+import { apiFetch } from "../lib/api";
 export function AddReminderPage({ onNavigate }: { onNavigate: (p: string) => void }) {
   const [title, setTitle] = useState("");
   const [date, setDate] = useState("");
@@ -10,28 +9,24 @@ export function AddReminderPage({ onNavigate }: { onNavigate: (p: string) => voi
   const [description, setDesc] = useState("");
   const [showSuccess, setSuccess] = useState(false);
 
-  const handleSubmit = (e: any) => {
-    e.preventDefault();
+ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
 
-    const reminders: Reminder[] = loadLocal("reminders");
+  // ⭐ convert to ISO string
+  const remind_at = `${date}T${time}:00`;
 
-    reminders.push({
-      id: crypto.randomUUID(),
+  await apiFetch("/reminders/", {
+    method: "POST",
+    body: JSON.stringify({
       title,
-      date,
-      time,
       description,
-      status: "upcoming",
-    });
+      remind_at,
+    }),
+  });
 
-    saveLocal("reminders", reminders);
-    setSuccess(true);
-
-    setTimeout(() => {
-      setSuccess(false);
-      onNavigate("view-reminders");
-    }, 1000);
-  };
+  setSuccess(true);
+  setTimeout(() => onNavigate("view-reminders"), 1000);
+};
 
   return (
     <div className="min-h-screen bg-gray-100">

@@ -1,56 +1,71 @@
-import { Bell } from "lucide-react";
 import { useEffect, useState } from "react";
-import { loadLocal } from "../lib/mockDatas";
-import type { Reminder } from "../lib/mockDatas";
+import { Bell } from "lucide-react";
+import { apiFetch } from "../lib/api";
+
+type ReminderNotification = {
+  id: string;
+  title: string;
+  description?: string;
+};
 
 export function NotificationBell() {
-  const [upcoming, setUpcoming] = useState<Reminder[]>([]);
-  const [show, setShow] = useState(false);
+  const [notifications, setNotifications] = useState<ReminderNotification[]>([]);
+  const [open, setOpen] = useState(false);
 
-  const refresh = () => {
-    const reminders: Reminder[] = loadLocal("reminders");
-    const today = new Date().toISOString().split("T")[0];
-    const nextOnes = reminders.filter((r) => r.date >= today && r.status === "upcoming");
-    setUpcoming(nextOnes);
-  };
-
+  // 🔁 Poll server every 5 sec
   useEffect(() => {
-    refresh();
-    const timer = setInterval(refresh, 5000);
-    return () => clearInterval(timer);
-  }, []);
+    const interval = setInterval(async () => {
+      try {
+        if (!open) {
+          const res = await apiFetch("/reminders/notifications");
+          setNotifications(res);
+        }
+      } catch (error) {
+        console.error("Failed to fetch notifications:", error);
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [open]);
+
+  // 🔔 When user clicks bell
+  const toggleBell = async () => {
+    const newOpen = !open;
+    setOpen(newOpen);
+
+    if (newOpen) {
+      const res = await apiFetch("/reminders/notifications");
+      setNotifications(res);
+
+      if (res.length > 0) {
+        await apiFetch("/reminders/notifications/read", { method: "POST" });
+      }
+    }
+  };
 
   return (
     <div className="relative">
-      <button
-        onClick={() => setShow(!show)}
-        className="relative p-2 hover:bg-gray-200 rounded-full"
-      >
-        <Bell className="w-6 h-6 text-gray-700" />
-        {upcoming.length > 0 && (
-          <span className="absolute top-0 right-0 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
-            {upcoming.length}
-          </span>
+      <button onClick={toggleBell} className="relative">
+        <Bell />
+
+        {notifications.length > 0 && (
+          <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
         )}
       </button>
 
-      {show && (
-        <div className="absolute right-0 mt-2 w-72 bg-white shadow-md rounded-md border">
-          <div className="p-3 font-semibold border-b">Upcoming Reminders</div>
-          <div className="max-h-64 overflow-y-auto">
-            {upcoming.length === 0 ? (
-              <p className="p-4 text-gray-500 text-center">No upcoming reminders</p>
-            ) : (
-              upcoming.map((r) => (
-                <div key={r.id} className="p-3 border-b hover:bg-gray-50">
-                  <p className="font-medium">{r.title}</p>
-                  <p className="text-sm text-gray-600">
-                    {r.date} at {r.time}
-                  </p>
-                </div>
-              ))
-            )}
-          </div>
+      {open && (
+        <div className="absolute right-0 mt-2 w-72 bg-white shadow-lg border rounded-lg p-3 z-50">
+          <h3 className="font-bold mb-2">Reminders</h3>
+
+          {notifications.length === 0 ? (
+            <p className="text-sm text-gray-500">No new notifications</p>
+          ) : (
+            notifications.map((n) => (
+              <div key={n.id} className="border-b py-2 text-sm">
+                🔔 {n.title}
+              </div>
+            ))
+          )}
         </div>
       )}
     </div>
