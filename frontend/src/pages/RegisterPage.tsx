@@ -1,4 +1,3 @@
-///
 import { useState } from "react";
 import { Scale } from "lucide-react";
 
@@ -33,9 +32,11 @@ try {
 
 setLoading(false);
 
+
 };
 
 return ( <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800">
+
 
   <div className="bg-white p-8 shadow-2xl rounded-2xl w-96">
 
@@ -74,5 +75,7 @@ return ( <div className="min-h-screen flex items-center justify-center bg-gradie
   </div>
 </div>
 
+
 );
 }
+// ****************RegisterPage.tsx**************** ui addeddd

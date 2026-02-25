@@ -5,9 +5,9 @@ import { AddReminderPage } from "./pages/AddReminderPage";
 import { ViewRemindersPage } from "./pages/ViewRemindersPage";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
-
+import { EvaluationPage } from "./pages/EvaluationPage";
 export default function App() {
-  const [page, setPage] = useState<"login" | "register" | "home" | "chat" | "add-reminder" | "view-reminders">("login");
+  const [page, setPage] = useState<"login" | "register" | "home" | "chat" | "add-reminder" | "view-reminders"| "evaluation">("login");
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
 
@@ -52,12 +52,13 @@ export default function App() {
   // =====================================================
   // ✅ LOGGED IN → APP PAGES
   // =====================================================
-  const navigate = (newPage: string) => setPage(newPage as "login" | "register" | "home" | "chat" | "add-reminder" | "view-reminders");
+  
+  const navigate = (newPage: string) => setPage(newPage as "login" | "register" | "home" | "chat" | "add-reminder" | "view-reminders" | "evaluation");
   
   if (page === "home") return <HomePage onNavigate={navigate} />;
   if (page === "chat") return <ChatPage onNavigate={navigate} />;
   if (page === "add-reminder") return <AddReminderPage onNavigate={navigate} />;
   if (page === "view-reminders") return <ViewRemindersPage onNavigate={navigate} />;
-
+  if (page === "evaluation") return <EvaluationPage />;
   return <HomePage onNavigate={navigate} />;
 }
