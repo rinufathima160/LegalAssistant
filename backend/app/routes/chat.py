@@ -6,6 +6,7 @@ from app.database.database import get_db
 from app.database.models import User, Chat, Message
 from app.schemas import ChatRequest
 from app.rag.rag_pipeline import answer_query
+from app.evaluation.evaluator import get_evaluation_results
 from dotenv import load_dotenv
 import os
 
@@ -169,7 +170,6 @@ def chat_with_lawyer(
     )
 
     bot_reply = answer_query(contextual_query)
-
     # Save bot reply
     bot_msg = Message(
         chat_id=chat.id,

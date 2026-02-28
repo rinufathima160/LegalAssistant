@@ -9,6 +9,7 @@ from app.routes.reminder import router as reminder_router
 from app.database.database import engine, Base
 from app.rag.rag_pipeline import initialize_rag
 from app.services.reminder_scheduler import start_scheduler
+from app.routes.evaluation import router as evaluation_router
 
 
 # ======================================
@@ -65,3 +66,4 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
 app.include_router(chat_router, prefix="/chat", tags=["Chat"])
 app.include_router(reminder_router, prefix="/reminders", tags=["Reminders"])
+app.include_router(evaluation_router, prefix="/evaluation", tags=["Evaluation"])
