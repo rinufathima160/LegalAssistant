@@ -19,7 +19,20 @@ export function EvaluationChart({ results }: { results: EvaluationResult[] }) {
     return <p>No evaluation data yet</p>
   }
 
-  const labels = results.map((_, i) => `Q${i + 1}`)
+  const labels = results.map(r => {
+  const text = (r.query).toLowerCase()
+
+  // remove common words
+  const stopWords = ["what", "is", "the", "of", "and", "a", "in"]
+
+  const filtered = text
+    .split(" ")
+    .filter(word => !stopWords.includes(word))
+    .slice(0, 3)
+    .join(" ")
+
+  return filtered
+})
 
   const mrrData = results.map(r => r.retrieval.mrr)
   const precisionData = results.map(r => r.retrieval.precision)
