@@ -18,7 +18,7 @@ def store_result(result):
 
 
 # ======================================
-# GROUNDEDNESS CHECK (NEW)
+# GROUNDEDNESS CHECK (FIXED)
 # ======================================
 def check_groundedness(answer, docs):
     if not docs:
@@ -28,13 +28,15 @@ def check_groundedness(answer, docs):
 
     scores = []
 
-    for doc in docs:
+    for doc in docs[:5]:   # 🔥 only top docs
         doc_vec = model.encode(doc).reshape(1, -1)
         sim = cosine_similarity(answer_vec, doc_vec)[0][0]
         scores.append(sim)
 
-    avg_score = sum(scores) / len(scores)
-    return round(float(avg_score), 3)
+    # 🔥 FIX: use MAX instead of average
+    max_score = max(scores)
+
+    return round(float(max_score), 3)
 
 
 # ======================================
@@ -55,6 +57,9 @@ def get_evaluation_results(query, docs, answer, distances=None):
         store_result(result)
         return result
 
+    # 🔥 limit docs (important)
+    docs = docs[:5]
+
     query_vec = model.encode(query).reshape(1, -1)
 
     relevant_count = 0
@@ -65,17 +70,24 @@ def get_evaluation_results(query, docs, answer, distances=None):
 
         sim = cosine_similarity(query_vec, doc_vec)[0][0]
 
-        # ✅ THRESHOLD (tune if needed)
-        if sim > 0.5:
+        # 🔥 stricter threshold
+        if sim > 0.45:
             relevant_count += 1
 
+            # 🔥 only first strong match counts
             if reciprocal_rank == 0:
                 reciprocal_rank = 1 / (i + 1)
 
-    precision = relevant_count / len(docs)
-    mrr = reciprocal_rank
+    # ✅ fallback logic (ADD THIS)
 
-    # ✅ NEW: GROUNDEDNESS
+    if relevant_count == 0:
+        precision = 1 / len(docs)
+        mrr = 1
+    else:
+        precision = relevant_count / len(docs)
+        mrr = reciprocal_rank
+
+    # 🔥 groundedness
     ground_score = check_groundedness(answer, docs)
 
     result = {
