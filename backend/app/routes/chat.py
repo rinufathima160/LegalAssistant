@@ -157,19 +157,36 @@ def chat_with_lawyer(
     db.commit()
 
     # Get last 3 messages
+    
+
+    # Get last messages
     last_messages = (
-        db.query(Message)
-        .filter(Message.chat_id == chat.id)
-        .order_by(Message.created_at.desc())
-        .limit(3)
-        .all()
+    db.query(Message)
+    .filter(Message.chat_id == chat.id)
+    .order_by(Message.created_at.desc())
+    .limit(5)
+    .all()
     )
 
-    contextual_query = " ".join(
-        [msg.content for msg in reversed(last_messages)]
-    )
+# Prepare chat history (ONLY Q&A format)
+    chat_history = []
+    temp_q = None
 
-    bot_reply = answer_query(contextual_query)
+    for msg in reversed(last_messages):
+        if msg.role == "user":
+            temp_q = msg.content
+        elif msg.role == "assistant" and temp_q:
+            chat_history.append({
+                "question": temp_q,
+                "answer": msg.content
+            })
+            temp_q = None
+
+# ✅ PASS clean query + history
+    bot_reply = answer_query(
+        data.message,
+        chat_history=chat_history
+    )
     # Save bot reply
     bot_msg = Message(
         chat_id=chat.id,
