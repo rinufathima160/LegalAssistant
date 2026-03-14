@@ -6,12 +6,11 @@ from .vector_store import add_embeddings, search
 from app.gemini.gemini_client import generate_text
 from app.rag.embedder import get_model
 from .clean_text import clean_text
+from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 
 model = get_model()
 
-def cosine_similarity(a, b):
-    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
 
 def initialize_rag():
@@ -33,6 +32,8 @@ def initialize_rag():
     print("📦 Total chunks stored:", len(chunks))   # ✅ ADD THIS
 
     print("✅ RAG initialized successfully.")
+from sklearn.metrics.pairwise import cosine_similarity
+
 def get_relevant_history(current_query, chat_history, top_k=2):
 
     if not chat_history:
@@ -43,17 +44,19 @@ def get_relevant_history(current_query, chat_history, top_k=2):
     scored = []
 
     for item in chat_history:
-        q = item["question"]   # assuming dict format
+        q = item["question"]
 
         hist_vec = model.encode(q)
-        sim = cosine_similarity([query_vec], [hist_vec])[0][0]
+
+        sim = cosine_similarity(
+            query_vec.reshape(1, -1),
+            hist_vec.reshape(1, -1)
+        )[0][0]
 
         scored.append((item, sim))
 
-    # sort by similarity
     scored.sort(key=lambda x: x[1], reverse=True)
 
-    # filter relevant
     relevant = [
         item for item, sim in scored[:top_k]
         if sim > 0.4
@@ -107,6 +110,7 @@ Rules:
 - If exact procedure is not in documents, give a general explanation
 - Explain step-by-step where possible
 - Keep answers clear and practical
+-Do NOT mix with previous unrelated questions
 Previous relevant conversation:
 {history_text}
 LEGAL CONTEXT:
@@ -120,11 +124,7 @@ Answer clearly in simple language.
     answer = generate_text(prompt)
 
     # ✅ THEN EVALUATE
-    if "\n" in query:
-        query = query.split("\n")[0]
-
-    if "?" in query:
-        query = query.split("?")[0] + "?"
+    
     from app.evaluation.evaluator import get_evaluation_results
     get_evaluation_results(query, docs, answer,distances)
 
