@@ -18,7 +18,6 @@ def get_evaluation():
     avg_precision = sum(r["retrieval"]["precision"] for r in results) / len(results)
     avg_mrr = sum(r["retrieval"]["mrr"] for r in results) / len(results)
 
-    # ✅ NEW: GROUNDEDNESS
     avg_groundedness = sum(
         r.get("groundedness", 0) for r in results
     ) / len(results)
