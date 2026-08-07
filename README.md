@@ -78,7 +78,7 @@ legal-assistant/
 ### Clone the repository
 
 ```bash
-git clone https://github.com/your-username/legal-assistant.git
+git clone https://github.com/rinufathima160/legal-assistant.git
 ```
 
 ```bash
@@ -177,7 +177,6 @@ npm run dev
 
 **Rinu Fathima**
 
-Master of Computer Applications (MCA)
 
 ---
 
